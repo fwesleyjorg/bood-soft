@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Autenticação Seguro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --secondary: #10B981;
+            --bg-color: #F3F4F6;
+            --surface: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --error: #EF4444;
+            --border: #E5E7EB;
+            --radius: 12px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        }
+
+        body.dark-mode {
+            --bg-color: #111827;
+            --surface: #1F2937;
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transition: all 0.3s;
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            width: 100%;
+            animation: fadeIn 0.4s ease-out forwards;
+            transition: background-color 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        h2 {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        /* Design melhorado com linha inferior */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            height: 50px;
+        }
+
+        label {
+            position: absolute;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            left: 0;
+            bottom: 12px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 0;
+            border: none;
+            border-bottom: 2px solid var(--border);
+            font-size: 1rem;
+            background: transparent;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        input::placeholder {
+            color: transparent;
+        }
+
+        /* Label sobe quando input tem foco ou valor */
+        input:focus ~ label,
+        input:not(:placeholder-shown) ~ label {
+            bottom: 28px;
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        input:focus {
+            outline: none;
+            border-bottom-color: var(--primary);
+        }
+
+        input:focus ~ label {
+            color: var(--primary);
+        }
+
+        select:focus {
+            outline: none;
+            border-bottom-color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0;
+            bottom: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s;
+            z-index: 2;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--gradient);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-outline:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        body.dark-mode .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .divider:not(:empty)::before { margin-right: .25em; }
+        .divider:not(:empty)::after { margin-left: .25em; }
+
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .pwd-strength {
+            height: 4px;
+            width: 100%;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .pwd-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s;
+        }
+        .strength-text {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            display: block;
+            color: var(--text-muted);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            border: none;
+            padding: 0;
+        }
+
+        .checkbox-group label {
+            position: static;
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: var(--surface);
+            color: var(--text-main);
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out forwards;
+            max-width: 400px;
+        }
+        .toast.error { border-color: var(--error); }
+        .toast.success { border-color: var(--secondary); }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .otp-inputs input {
+            width: 45px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            border: none;
+            border-bottom: 2px solid var(--border);
+            background: transparent;
+            color: var(--text-main);
+        }
+
+        .otp-inputs input:focus {
+            outline: none;
+            border-bottom-color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .card { padding: 30px 20px; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar Tema">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div id="toast-container"></div>
+
+    <div class="container" id="main-container">
+        
+        <!-- LOGIN VIEW -->
+        <div id="view-login" class="view card active">
+            <h2>Bem-vindo</h2>
+            <p class="subtitle">Faça login para continuar</p>
+            
+            <form id="form-login">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="email" id="login-email" required placeholder="E-mail">
+                        <label for="login-email">E-mail</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="login-password" required placeholder="Senha">
+                        <i class="fas fa-eye password-toggle" onclick="togglePassword('login-password')"></i>
+                        <label for="login-password">Senha</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Entrar</button>
+            </form>
+
+            <div class="links">
+                <a onclick="switchView('view-forgot')">Esqueci minha senha</a>
+                <a onclick="switchView('view-signup')">Criar conta</a>
+            </div>
+
+            <div class="divider">ou continue com</div>
+
+            <button type="button" class="btn btn-outline" onclick="oauthLogin('Google')">
+                <i class="fab fa-google"></i> Google
+            </button>
+            <button type="button" class="btn btn-outline" onclick="oauthLogin('GitHub')">
+                <i class="fab fa-github"></i> GitHub
+            </button>
+        </div>
+
+        <!-- SIGNUP VIEW -->
+        <div id="view-signup" class="view card">
+            <h2>Criar Conta</h2>
+            <p class="subtitle">Junte-se a nós</p>
+            
+            <form id="form-signup">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="reg-name" required placeholder="Nome Completo">
+                        <label for="reg-name">Nome Completo</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="email" id="reg-email" required placeholder="E-mail">
+                        <label for="reg-email">E-mail</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="reg-password" required placeholder="Senha">
+                        <i class="fas fa-eye password-toggle" onclick="togglePassword('reg-password')"></i>
+                        <label for="reg-password">Senha</label>
+                    </div>
+                    <div class="pwd-strength"><div class="pwd-strength-bar" id="pwd-bar"></div></div>
+                    <span class="strength-text" id="pwd-text">Força da senha</span>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="reg-confirm" required placeholder="Confirmar Senha">
+                        <label for="reg-confirm">Confirmar Senha</label>
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reg-terms" required>
+                    <label for="reg-terms">Li e aceito os <a onclick="openModal('modal-terms')">Termos de Uso</a></label>
+                </div>
+                <button type="submit" class="btn">Cadastrar</button>
+            </form>
+
+            <div class="links" style="justify-content: center;">
+                <span style="color: var(--text-muted);">Já tem conta? <a onclick="switchView('view-login')">Faça login</a></span>
+            </div>
+        </div>
+
+        <!-- VERIFY EMAIL VIEW -->
+        <div id="view-verify" class="view card">
+            <h2>Verificar E-mail</h2>
+            <p class="subtitle" id="verify-subtitle">Enviamos um código para seu e-mail.</p>
+            
+            <form id="form-verify">
+                <div class="otp-inputs" id="otp-container">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                    <input type="text" maxlength="1" onkeyup="moveToNext(this, event)">
+                </div>
+                <button type="submit" class="btn">Verificar</button>
+            </form>
+            <div class="links" style="justify-content: center; margin-top: 20px;">
+                <a onclick="resendCode()">Reenviar código</a>
+            </div>
+        </div>
+
+        <!-- FORGOT PASSWORD VIEW -->
+        <div id="view-forgot" class="view card">
+            <h2>Recuperar Senha</h2>
+            <p class="subtitle">Enviaremos um link de recuperação</p>
+            
+            <form id="form-forgot">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="email" id="forgot-email" required placeholder="E-mail">
+                        <label for="forgot-email">Seu E-mail</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Enviar Link</button>
+            </form>
+            <div class="links" style="justify-content: center;">
+                <a onclick="switchView('view-login')"><i class="fas fa-arrow-left"></i> Voltar ao login</a>
+            </div>
+        </div>
+
+        <!-- RESET PASSWORD VIEW -->
+        <div id="view-reset" class="view card">
+            <h2>Nova Senha</h2>
+            <p class="subtitle">Digite sua nova senha de acesso</p>
+            
+            <form id="form-reset">
+                <input type="hidden" id="reset-email">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="reset-token" required placeholder="Token">
+                        <label for="reset-token">Código de Recuperação</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="reset-password" required placeholder="Nova Senha">
+                        <label for="reset-password">Nova Senha</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Redefinir Senha</button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal-terms">
+        <div class="modal">
+            <h2>Termos de Serviço</h2>
+            <div style="margin: 20px 0; font-size: 0.9rem; color: var(--text-muted); max-height: 300px; overflow-y: auto;">
+                <p><strong>1. Aceitação dos Termos:</strong> Ao acessar e utilizar este sistema, você concorda com estes termos.</p><br>
+                <p><strong>2. Privacidade:</strong> Seus dados são armazenados localmente no seu navegador para fins de simulação.</p><br>
+                <p><strong>3. Segurança:</strong> As senhas são submetidas a hash SHA-256 localmente antes do armazenamento simulado.</p><br>
+                <p><strong>4. Uso Responsável:</strong> Este sistema é um projeto de demonstração e não deve ser usado em produção.</p><br>
+                <p><strong>5. Sem Responsabilidade:</strong> O desenvolvedor não se responsabiliza por perda de dados ou acesso não autorizado.</p>
+            </div>
+            <button class="btn" onclick="closeModal('modal-terms')">Fechar e Aceitar</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
